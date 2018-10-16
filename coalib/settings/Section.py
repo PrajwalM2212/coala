@@ -10,7 +10,9 @@ from coalib.misc.DictUtilities import update_ordered_dict_key
 from coalib.settings.Setting import Setting, path_list
 from coalib.parsing.Globbing import glob_escape
 
-
+# This will allow you to add new settings to a section.Sections is a dictionary and its contents are 
+# section_name:[settings related to section_name]
+# Section() will create a new section and Setting() will create a new setting
 def append_to_sections(sections,
                        key,
                        value,
@@ -71,7 +73,10 @@ def extract_aspects_from_section(section):
 
     return aspect_instances
 
-
+# Generator is anything that has 'yield' keyword instead of 'return'. It returns a generator object 
+# which is iterable
+# Iterator is anything that can be used in a for in loop like list,tuple and dictionary
+# Decorator takes a function and returns another function(adds more functionality to original function)
 @generate_repr()
 class Section:
     """
@@ -134,10 +139,16 @@ class Section:
         self.contents = OrderedDict()
         self.aspects = None
         self.language = None
-
+#???
     def bear_dirs(self):
+        # path_list => splits the path into list ang generates path from each...returns A list of absolute paths.
         bear_dirs = path_list(self.get('bear_dirs', ''))
+        #Your path (i.e. the list of directories Python goes through to search for modules and files) is stored in the path attribute of the sys module. Since path is a list, you can use the append method to add new directories to the path.
+        #For instance, to add the directory /home/me/mypy to the path, just do:
+        #import sys
+        #sys.path.append("/home/me/mypy")
         for bear_dir in bear_dirs:
+            # Add to path
             sys.path.append(bear_dir)
         bear_dir_globs = [
             os.path.join(glob_escape(bear_dir), '**')
@@ -145,8 +156,10 @@ class Section:
         bear_dir_globs += [
             os.path.join(glob_escape(bear_dir), '**')
             for bear_dir in collect_registered_bears_dirs('coalabears')]
+        # As far as I understand, it is creating a list which contains paths
         return bear_dir_globs
 
+#?
     def is_enabled(self, targets):
         """
         Checks if this section is enabled or, if targets is not empty, if it is
@@ -155,11 +168,14 @@ class Section:
         :param targets: List of target section names, all lower case.
         :return:        True or False
         """
+        #return true if length is zero and there is no enabled setting or whatever the value of enabled is
         if len(targets) == 0:
             return bool(self.get('enabled', 'true'))
-
+        # if len(targets) > 0 return name of those targets
         return self.name.lower() in targets
 
+    # create a (name of the setting using a custom key or the setting name itself) and append it
+    # Actually the name is a bit misleading as all it does it overwrite/create a setting entry in a section 
     def append(self, setting, custom_key=None):
         if not isinstance(setting, Setting):
             raise TypeError
@@ -177,13 +193,19 @@ class Section:
                               allow_appending=True):
         """
         Adds the value of the setting to an existing setting if there is
-        already a setting  with the key. Otherwise creates a new setting.
+        already a setting with the key. Otherwise creates a new setting.
         """
         if custom_key is None:
             key = setting.key
         else:
             key = custom_key
+'''Like all special methods (with "magic names" that begin and end in __), __contains__ is not
+ meant to be called directly (except in very specific cases, such as up=calls to the superclass): 
+ rather, such methods are called as part of the operation of built-ins and operators. In the case of __contains__, the operator in question is in -- the "containment check" operator.
 
+With your class a as you present it (except for fixing your typo, and using True instead 
+of true!-), and b as its instance, print 'x' in b will print True -- and so will any other containment 
+check on b, since b always returns True (because self.d, a non-empty string, is true).'''
         if self.__contains__(key, ignore_defaults=True) and allow_appending:
             val = self[key]
             val.value = str(val._value) + '\n' + setting._value
@@ -211,6 +233,7 @@ class Section:
         else:  # It must be a string since signature is enforced
             self.append(Setting(key, value))
 
+ # Allows for in loop to run . It also provides default along with contents
     def __iter__(self, ignore_defaults=False):
         joined = self.contents.copy()
         if self.defaults is not None and not ignore_defaults:
@@ -219,7 +242,7 @@ class Section:
             joined.update(self.defaults.contents)
 
         return iter(joined)
-
+# check if item exists
     def __contains__(self, item, ignore_defaults=False):
         try:
             self.__getitem__(item, ignore_defaults)
