@@ -1,8 +1,7 @@
 [Default]
 files = *.py, coalib/**/*.py, ./coala, tests/**/*.py, docs/conf.py
-ignore =
-    tests/bearlib/languages/documentation/documentation_extraction_testdata/*.py,
-    tests/collecting/collectors_test_dir/bears/incorrect_bear.py,
+ignore = tests/bearlib/languages/documentation/documentation_extraction_testdata/*.py,
+tests/collecting/collectors_test_dir/bears/incorrect_bear.py,
 
 max_line_length = 80
 use_spaces = True
@@ -31,11 +30,12 @@ remove_all_unused_imports = true
 [autopep8]
 bears = PEP8Bear, PycodestyleBear
 pycodestyle_ignore = E121, E123, E126, E226, E704,
-                     W503, W504
+W503, W504
 
 default_actions = PEP8Bear: ApplyPatchAction
 
-[linelength]  # Sometimes autopep8 makes too long lines, need to check after!
+# Sometimes autopep8 makes too long lines, need to check after!
+[linelength]
 bears = LineLengthBear
 ignore_length_regex = ^.*https?://
 
@@ -54,22 +54,35 @@ enabled = False
 bears = LanguageToolBear
 files = docs/**/*.rst,*.rst
 ignore = docs/API/
-languagetool_disable_rules =
-    EN_QUOTES,                          # `` for links in rst files
-    WHITESPACE_RULE,                    # Indents in code
-    UPPERCASE_SENTENCE_START,           # Sentences start with "coala"
-    COMMA_PARENTHESIS_WHITESPACE,       # Confuses .coafile
-    DOUBLE_PUNCTUATION,                 # Used in `.. note::`
-    SENTENCE_WHITESPACE,                # Thinks coalib.xyz should have space
-    THE_PUNCT,                          # Confused by symbols in code
-    EN_A_VS_AN,                         # Mistakes variable `a` to be an article
-    EN_UNPAIRED_BRACKETS,               # Confused with brackets in code
-    ENGLISH_WORD_REPEAT_BEGINNING_RULE, # Confuses itself in regex
-    CD_NN,                              # index -> indices
-    SENT_START_CONJUNCTIVE_LINKING_ADVERB_COMMA,
-    SENTENCE_FRAGMENT,                  # Thinks headings are sentences
-    ENGLISH_WORD_REPEAT_RULE,           # Found in code
-    POSSESIVE_APOSTROPHE                # Confused by directory name "objects"
+languagetool_disable_rules = EN_QUOTES,
+WHITESPACE_RULE,
+UPPERCASE_SENTENCE_START,
+COMMA_PARENTHESIS_WHITESPACE,
+DOUBLE_PUNCTUATION,
+SENTENCE_WHITESPACE,
+THE_PUNCT,
+EN_A_VS_AN,
+EN_UNPAIRED_BRACKETS,
+ENGLISH_WORD_REPEAT_BEGINNING_RULE,
+CD_NN,
+SENT_START_CONJUNCTIVE_LINKING_ADVERB_COMMA,
+SENTENCE_FRAGMENT,
+ENGLISH_WORD_REPEAT_RULE,
+POSSESIVE_APOSTROPHE
+# `` for links in rst files
+# Indents in code
+# Sentences start with "coala"
+# Confuses .coafile
+# Used in `.. note::`
+# Thinks coalib.xyz should have space
+# Confused by symbols in code
+# Mistakes variable `a` to be an article
+# Confused with brackets in code
+# Confuses itself in regex
+# index -> indices
+# Thinks headings are sentences
+# Found in code
+# Confused by directory name "objects"
 
 [commit]
 bears = GitCommitBear
@@ -81,21 +94,28 @@ enabled = False
 
 bears = PyLintBear
 
-pylint_cli_options = --ignore\=CVS,cindex.py,tests
-pylint_disable = missing-docstring, # Lots of functions don't need docstrings
-                 arguments-differ, # Some child classes need to change
-                                   # argument signature of a inherited function
-                 bad-builtin, # Pylint doesn't like most builting functions
-                              # like filter, map etc. It prefers using for
-                              # loops for everything - although sometimes
-                              # map and other builtins are more intuitive.
-                 fixme, # Already done using KeywordBear
-                 locally-disabled, # Without this a pylint pragma is also
-                                   # considered an issue
-                 no-member, # Currently Pylint doesn't understand our enum()
-                            # making a lot of false positives here
-                 bad-continuation # Our indentation style guide is
-                                  # different from PEP
+pylint_cli_options = --ignore=CVS,cindex.py,tests
+# Lots of functions don't need docstrings
+pylint_disable = missing-docstring,
+arguments-differ,
+bad-builtin,
+fixme,
+locally-disabled,
+no-member,
+bad-continuation
+# Some child classes need to change
+# argument signature of a inherited function
+# Pylint doesn't like most builting functions
+# like filter, map etc. It prefers using for
+# loops for everything - although sometimes
+# map and other builtins are more intuitive.
+# Already done using KeywordBear
+# Without this a pylint pragma is also
+# considered an issue
+# Currently Pylint doesn't understand our enum()
+# making a lot of false positives here
+# Our indentation style guide is
+# different from PEP
 
 [LineCounting]
 enabled = False
@@ -124,10 +144,9 @@ ignore = docs/Developers/coala_settings.rst
 
 [text]
 bears = SpaceConsistencyBear
-files =
-    LICENSE, ISSUE_TEMPLATE, PULL_REQUEST_TEMPLATE.md, MANIFEST.in,
-    **.sh, .travis.yml, ./.circleci/config.yml, setup.cfg,
-    ./docs/_static/custom.css
+files = LICENSE, ISSUE_TEMPLATE, PULL_REQUEST_TEMPLATE.md, MANIFEST.in,
+**.sh, .travis.yml, ./.circleci/config.yml, setup.cfg,
+./docs/_static/custom.css
 ignore = node_modules/
 
 [jinja2]
@@ -141,7 +160,7 @@ bears = KeywordBear
 language = python 3
 
 ci_keywords, keywords = \#TODO, \# TODO, \#FIXME, \# FIXME
-cs_keywords =
+cs_keywords = 
 
 [urllib]
 # Encourage usage of requests library by blacklisting usage of urlopen()
@@ -158,3 +177,6 @@ bears = ShellCheckBear
 files = **.sh
 shell = bash
 shellcheck_ignore = SC2046, SC2154
+[cli]
+bears = SpaceConsistencyBear
+files = src/*.c

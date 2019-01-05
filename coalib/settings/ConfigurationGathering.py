@@ -242,12 +242,15 @@ def load_configuration(arg_list,
     """
     cli_sections = parse_cli(arg_list=arg_list, arg_parser=arg_parser,
                              args=args)
+
     check_conflicts(cli_sections)
 
     if (
-            bool(cli_sections['cli'].get('find_config', 'False')) and
-            str(cli_sections['cli'].get('config')) == ''):
+        bool(cli_sections['cli'].get('find_config', 'False')) and
+        str(cli_sections['cli'].get('config')) == ''):
         cli_sections['cli'].add_or_create_setting(
+            # setting is a key value pair
+            # section is a collection of settings
             Setting('config', PathArg(find_user_config(os.getcwd()))))
 
     # We don't want to store targets argument back to file, thus remove it
@@ -261,6 +264,11 @@ def load_configuration(arg_list,
                                          silent=silent)
         user_sections = load_config_file(
             Constants.user_coafile, silent=True)
+
+        print('============')
+        for k, v in user_sections.items():
+            print(k, v)
+        print('============')
 
         default_config = str(base_sections['default'].get('config', '.coafile'))
         user_config = str(user_sections['default'].get(
@@ -277,6 +285,22 @@ def load_configuration(arg_list,
 
         coafile_sections = load_config_file(config,
                                             silent=save or silent)
+
+        # ======= to save======
+        # get('config', Constants.local_coafile)
+        save_config = os.path.abspath(
+            str(cli_sections['cli'].get('config', Constants.local_coafile)))
+
+        to_save = load_config_file(save_config, silent=silent)
+
+        to_save_section = merge_section_dicts(to_save, cli_sections)
+        print('============')
+        for k, v in to_save_section.items():
+            print(k, v)
+        print('============')
+
+        save_sections(to_save_section)
+        # ======= to save======
 
         sections = merge_section_dicts(base_sections, user_sections)
 
@@ -503,7 +527,6 @@ def gather_configuration(acquire_settings,
                                               acquire_settings,
                                               targets=targets,
                                               )
-    save_sections(sections)
     warn_nonexistent_targets(targets, sections)
 
     return (sections,
