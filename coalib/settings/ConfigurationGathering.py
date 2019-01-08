@@ -245,6 +245,8 @@ def load_configuration(arg_list,
 
     check_conflicts(cli_sections)
 
+    to_save_sections = cli_sections
+
     if (
         bool(cli_sections['cli'].get('find_config', 'False')) and
         str(cli_sections['cli'].get('config')) == ''):
@@ -265,11 +267,6 @@ def load_configuration(arg_list,
         user_sections = load_config_file(
             Constants.user_coafile, silent=True)
 
-        print('============')
-        for k, v in user_sections.items():
-            print(k, v)
-        print('============')
-
         default_config = str(base_sections['default'].get('config', '.coafile'))
         user_config = str(user_sections['default'].get(
             'config', default_config))
@@ -286,21 +283,13 @@ def load_configuration(arg_list,
         coafile_sections = load_config_file(config,
                                             silent=save or silent)
 
-        # ======= to save======
-        # get('config', Constants.local_coafile)
+        # Get the sections to be saved
         save_config = os.path.abspath(
             str(cli_sections['cli'].get('config', Constants.local_coafile)))
 
         to_save = load_config_file(save_config, silent=silent)
 
-        to_save_section = merge_section_dicts(to_save, cli_sections)
-        print('============')
-        for k, v in to_save_section.items():
-            print(k, v)
-        print('============')
-
-        save_sections(to_save_section)
-        # ======= to save======
+        to_save_sections = merge_section_dicts(to_save, cli_sections)
 
         sections = merge_section_dicts(base_sections, user_sections)
 
@@ -337,7 +326,7 @@ def load_configuration(arg_list,
     logging.getLogger().setLevel(LOG_LEVEL.str_dict.get(str_log_level,
                                                         LOG_LEVEL.INFO))
 
-    return sections, targets
+    return to_save_sections, sections, targets
 
 
 def find_user_config(file_path, max_trials=10):
@@ -442,9 +431,9 @@ def get_all_bears(log_printer=None,
     :return:            Tuple containing dictionaries of unsorted local
                         and global bears.
     """
-    sections, _ = load_configuration(arg_list=None,
-                                     arg_parser=arg_parser,
-                                     silent=silent)
+    to_save_sections, sections, _ = load_configuration(arg_list=None,
+                                                       arg_parser=arg_parser,
+                                                       silent=silent)
     local_bears, global_bears = collect_all_bears_from_sections(
         sections, bear_globs=bear_globs)
     return local_bears, global_bears
@@ -519,8 +508,8 @@ def gather_configuration(acquire_settings,
         # Note: arg_list can also be []. Hence we cannot use
         # `arg_list = arg_list or default_list`
         arg_list = sys.argv[1:] if arg_list is None else arg_list
-    sections, targets = load_configuration(arg_list, arg_parser=arg_parser,
-                                           args=args)
+    to_save_sections, sections, targets = load_configuration(arg_list, arg_parser=arg_parser,
+                                                             args=args)
     _set_section_language(sections)
     aspectize_sections(sections)
     local_bears, global_bears = fill_settings(sections,
@@ -528,6 +517,7 @@ def gather_configuration(acquire_settings,
                                               targets=targets,
                                               )
     warn_nonexistent_targets(targets, sections)
+    save_sections(to_save_sections)
 
     return (sections,
             local_bears,

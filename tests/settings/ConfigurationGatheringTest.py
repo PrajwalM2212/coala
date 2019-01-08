@@ -109,11 +109,10 @@ class ConfigurationGatheringTest(unittest.TestCase):
 
         capture.check(
             ('root', 'WARNING', 'Filename default_coafile has been deprecated. '
-             'Please use system_coafile instead.')
+                                'Please use system_coafile instead.')
         )
 
     def test_system_coafile_parsing(self):
-
         Constants.system_coafile = os.path.abspath(os.path.join(
             os.path.dirname(os.path.realpath(__file__)),
             'section_manager_test_files',
@@ -205,7 +204,7 @@ class ConfigurationGatheringTest(unittest.TestCase):
                                      self.log_printer,
                                      arg_list=['-S', 'value=1', 'test.value=2',
                                                '-c', escape(temporary, '\\')] +
-                                     self.min_args))
+                                              self.min_args))
 
         self.assertEqual(sections['cli'],
                          sections['test'].defaults)
@@ -293,28 +292,28 @@ class ConfigurationGatheringTest(unittest.TestCase):
                                  'section_manager_test_files',
                                  'child_dir')
         with change_directory(child_dir):
-            sections, targets = load_configuration([], self.log_printer)
+            to_save_sections, sections, targets = load_configuration([], self.log_printer)
             self.assertIn('value', sections['cli'])
 
-            sections, targets = load_configuration(
+            to_save_sections, sections, targets = load_configuration(
                 ['--no-config'],
                 self.log_printer)
             self.assertNotIn('value', sections['cli'])
 
-            sections, targets = load_configuration(
+            to_save_sections, sections, targets = load_configuration(
                 ['--no-config', '-S', 'use_spaces=True'],
                 self.log_printer)
             self.assertIn('use_spaces', sections['cli'])
             self.assertNotIn('values', sections['cli'])
 
             with self.assertRaises(SystemExit) as cm:
-                sections, target = load_configuration(
+                to_save_sections,sections, target = load_configuration(
                     ['--no-config', '--save'],
                     self.log_printer)
                 self.assertEqual(cm.exception.code, 2)
 
             with self.assertRaises(SystemExit) as cm:
-                sections, target = load_configuration(
+                to_save_sections,sections, target = load_configuration(
                     ['--no-config', '--find-config'],
                     self.log_printer)
                 self.assertEqual(cm.exception.code, 2)

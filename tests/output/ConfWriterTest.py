@@ -82,7 +82,7 @@ class ConfWriterTest(unittest.TestCase):
                        'test = push\n',
                        't = \n']
         sections = load_configuration(['-c', escape(self.file, '\\')],
-                                      self.log_printer)[0]
+                                      self.log_printer)[1]
         del sections['cli'].contents['config']
         self.uut.write_sections(sections)
         self.uut.close()
@@ -108,7 +108,7 @@ class ConfWriterTest(unittest.TestCase):
                        '[cli]\n']
 
         sections = load_configuration(['-c', escape(self.file, '\\')],
-                                      self.log_printer)[0]
+                                      self.log_printer)[1]
         del sections['cli'].contents['config']
         self.uut.write_sections(sections)
         self.uut.close()
