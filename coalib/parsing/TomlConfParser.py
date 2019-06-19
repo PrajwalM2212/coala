@@ -5,7 +5,7 @@ import os
 import tomlkit.container
 import tomlkit.items
 from coalib.misc import Constants
-from tomlkit.items import Table
+from tomlkit.items import Table, Item
 
 from coalib.results.SourcePosition import SourcePosition
 from coalib.settings.Section import Section
@@ -252,8 +252,9 @@ class TomlConfParser:
     @staticmethod
     def format_value(value):
         if isinstance(value, list):
+            value = [str(i) for i in value]
             return ', '.join(value)
-        elif isinstance(value, (int, bool)):
-            return str(value)
-        else:
+        elif isinstance(value, Item):
             return value.as_string()
+        else:
+            return str(value)

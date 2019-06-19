@@ -89,6 +89,7 @@ aspectname1.subaspect_taste1 =  'hello'
     def test_format_value(self):
         self.assertEqual(self.uut.format_value(80), '80')
         self.assertEqual(self.uut.format_value(True), 'True')
+        self.assertEqual(self.uut.format_value([1, 2, 3]), '1, 2, 3')
 
     def test_parse_default_section_deprecated(self):
         default_should = OrderedDict([

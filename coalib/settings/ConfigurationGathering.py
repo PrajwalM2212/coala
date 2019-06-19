@@ -248,7 +248,7 @@ def load_configuration(arg_list,
     if bool(cli_sections['cli'].get('use_toml', 'False')):
         sections, targets = load_toml_config(cli_sections, silent)
     else:
-        sections, targets = load_ini_config(cli_sections, silent)
+        sections, targets = load_coafile_config(cli_sections, silent)
     for name, section in list(sections.items()):
         section.set_default_section(sections)
         if name == 'default':
@@ -300,8 +300,8 @@ def load_toml_config_file(filename, log_printer=None, silent=False):
 
 def load_toml_config(cli_sections, silent):
     if (
-        bool(cli_sections['cli'].get('find_config', 'False')) and
-        str(cli_sections['cli'].get('config')) == ''):
+            bool(cli_sections['cli'].get('find_config', 'False')) and
+            str(cli_sections['cli'].get('config')) == ''):
         cli_sections['cli'].add_or_create_setting(
 
             Setting('config', PathArg(find_user_config(
@@ -354,10 +354,10 @@ def load_toml_config(cli_sections, silent):
     return sections, targets
 
 
-def load_ini_config(cli_sections, silent):
+def load_coafile_config(cli_sections, silent):
     if (
-        bool(cli_sections['cli'].get('find_config', 'False')) and
-        str(cli_sections['cli'].get('config')) == ''):
+            bool(cli_sections['cli'].get('find_config', 'False')) and
+            str(cli_sections['cli'].get('config')) == ''):
         cli_sections['cli'].add_or_create_setting(
 
             Setting('config', PathArg(find_user_config(os.getcwd()))))
