@@ -112,10 +112,8 @@ aspectname1.subaspect_taste1 =  'hello'
     def test_parse_all(self):
         all_should = OrderedDict([
             ('(comment1)', '# Hello World'),
-            ('(max_line_length-inline)', '#cadc'),
             ('max_line_length', '80'),
             ('ignore', './vendor'),
-            ('(a-inline)', '#ccas'),
             ('a', 'true'),
             ('(comment2)', '')
         ])

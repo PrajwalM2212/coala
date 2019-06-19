@@ -5,12 +5,35 @@ import os
 import tomlkit.container
 import tomlkit.items
 from coalib.misc import Constants
-from collections import OrderedDict
-from tomlkit.items import Comment, Table
+from tomlkit.items import Table
 
 from coalib.results.SourcePosition import SourcePosition
 from coalib.settings.Section import Section
 from coalib.settings.Setting import Setting
+from collections import Iterable, OrderedDict
+
+
+class TomlSetting(Setting):
+    def __init__(self, key,
+                 value,
+                 original_value,
+                 origin: (str, SourcePosition) = '',
+                 strip_whitespaces: bool = True,
+                 list_delimiters: Iterable = (',', ';'),
+                 from_cli: bool = False,
+                 remove_empty_iter_elements: bool = True,
+                 to_append: bool = False,
+                 ):
+        self.original_value = original_value
+        super(TomlSetting, self).__init__(
+            key,
+            value,
+            origin,
+            strip_whitespaces,
+            list_delimiters,
+            from_cli,
+            remove_empty_iter_elements,
+            to_append)
 
 
 class TomlConfParser:
@@ -90,6 +113,7 @@ class TomlConfParser:
 
         # Handle Default section
         if not isinstance(section_content, Table):
+            original_value = section_content
             current_section = self.get_section('default', True)
             logging.warning('A setting does not have a section.'
                             'This is a deprecated feature please '
@@ -104,6 +128,7 @@ class TomlConfParser:
             self.create_setting(current_section,
                                 section_name,
                                 section_content,
+                                original_value,
                                 origin,
                                 False
                                 )
@@ -131,12 +156,14 @@ class TomlConfParser:
                             origin, appends):
         for content_key, content_value in section_content.value.body:
 
+            original_value = content_value
             # Handle full-line comments
             if content_key is None:
                 content_key = '(' + 'comment' + str(self.__rand_helper) + ')'
                 self.__rand_helper += 1
                 self.create_setting(current_section, content_key,
                                     content_value.as_string(),
+                                    original_value,
                                     origin, False)
                 continue
             else:
@@ -148,10 +175,6 @@ class TomlConfParser:
                                           origin)
                     continue
 
-                # Handle inline and array comments
-                self.handle_inline_array_comments(current_section, content_key,
-                                                  content_value, origin)
-
                 to_append = False
 
                 if not isinstance(content_value, str):
@@ -161,24 +184,26 @@ class TomlConfParser:
                     to_append = True
 
                 self.create_setting(current_section, content_key, content_value,
-                                    origin, to_append)
+                                    original_value, origin, to_append)
 
     def __init_sections(self):
         self.sections = OrderedDict()
         self.sections['default'] = Section('Default')
         self.__rand_helper = 0
 
-    def create_setting(self, current_section, key, value, origin, to_append):
+    def create_setting(self, current_section, key, value, original_value,
+                       origin, to_append):
         current_section.add_or_create_setting(
-            Setting(key,
-                    value,
-                    SourcePosition(
-                        str(origin)),
-                    to_append=to_append,
-                    # Start ignoring PEP8Bear, PycodestyleBear*
-                    # they fail to resolve this
-                    remove_empty_iter_elements=
-                    self.__remove_empty_iter_elements),
+            TomlSetting(key,
+                        value,
+                        original_value,
+                        SourcePosition(
+                            str(origin)),
+                        to_append=to_append,
+                        # Start ignoring PEP8Bear, PycodestyleBear*
+                        # they fail to resolve this
+                        remove_empty_iter_elements=
+                        self.__remove_empty_iter_elements),
             # Stop ignoring
             allow_appending=(key == []))
 
@@ -196,12 +221,12 @@ class TomlConfParser:
 
         base_key = content_key
         for k, v in content_value.value.body:
-
+            original_value = v
             if k is None:
                 com_key = '(' + 'comment' + str(self.__rand_helper) + ')'
                 self.__rand_helper += 1
                 self.create_setting(current_section, com_key, v.as_string(),
-                                    origin, False)
+                                    original_value, origin, False)
             else:
                 k = k.as_string()
 
@@ -213,9 +238,6 @@ class TomlConfParser:
                                           origin)
                     continue
 
-                self.handle_inline_array_comments(current_section, key,
-                                                  v, origin)
-
                 if not isinstance(v, str):
                     v = self.format_value(v)
 
@@ -224,23 +246,8 @@ class TomlConfParser:
                 if base_key + '.' + k in appends:
                     to_append = True
 
-                self.create_setting(current_section, key, v, origin, to_append)
-
-    def handle_inline_array_comments(self, current_section, content_key,
-                                     content_value, origin):
-        inline_comment = content_value.trivia.comment
-
-        if isinstance(content_value, tomlkit.items.Array):
-            if self.check_array_comment(content_value):
-                c_key = '(' + content_key + '-array' + ')'
-                self.create_setting(current_section, c_key,
-                                    content_value.as_string(), origin,
-                                    False)
-
-        if '#' in inline_comment:
-            content_key = '(' + content_key + '-inline' + ')'
-            self.create_setting(current_section, content_key,
-                                inline_comment, origin, False)
+                self.create_setting(current_section, key, v, original_value,
+                                    origin, to_append)
 
     @staticmethod
     def format_value(value):
@@ -250,10 +257,3 @@ class TomlConfParser:
             return str(value)
         else:
             return value.as_string()
-
-    @staticmethod
-    def check_array_comment(content_value):
-        lines = content_value.as_string().split()
-        for line in lines:
-            if sorted(line)[0].strip() == '#':
-                return True

@@ -300,8 +300,8 @@ def load_toml_config_file(filename, log_printer=None, silent=False):
 
 def load_toml_config(cli_sections, silent):
     if (
-            bool(cli_sections['cli'].get('find_config', 'False')) and
-            str(cli_sections['cli'].get('config')) == ''):
+        bool(cli_sections['cli'].get('find_config', 'False')) and
+        str(cli_sections['cli'].get('config')) == ''):
         cli_sections['cli'].add_or_create_setting(
 
             Setting('config', PathArg(find_user_config(
@@ -356,8 +356,8 @@ def load_toml_config(cli_sections, silent):
 
 def load_ini_config(cli_sections, silent):
     if (
-                bool(cli_sections['cli'].get('find_config', 'False')) and
-                str(cli_sections['cli'].get('config')) == ''):
+        bool(cli_sections['cli'].get('find_config', 'False')) and
+        str(cli_sections['cli'].get('config')) == ''):
         cli_sections['cli'].add_or_create_setting(
 
             Setting('config', PathArg(find_user_config(os.getcwd()))))
