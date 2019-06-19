@@ -1,6 +1,5 @@
 import logging
 
-from tomlkit._compat import decode
 import os
 
 import tomlkit.container
@@ -14,27 +13,13 @@ from coalib.settings.Section import Section
 from coalib.settings.Setting import Setting
 
 
-class CommentKey:
-    def __init__(self, key, val):
-        self.key = key
-        self.val = val
-
-    def __hash__(self):
-        return hash(str(self))
-
-    def __str__(self):
-        return '{}, {}'.format(self.key, self.val)
-
-    def __eq__(self, other):
-        return str(self) == other
-
-
 class TomlConfParser:
 
     def __init__(self, remove_empty_iter_elements=True):
 
         self.sections = None
         self.data = None
+        self.__rand_helper = None
         self.__init_sections()
         self.__remove_empty_iter_elements = remove_empty_iter_elements
 
@@ -105,16 +90,18 @@ class TomlConfParser:
 
         # Handle Default section
         if not isinstance(section_content, Table):
+            current_section = self.get_section('default', True)
             logging.warning('A setting does not have a section.'
                             'This is a deprecated feature please '
                             'put this setting in a section defined'
                             ' with `[<your-section-name]` in a '
                             'configuration file.')
 
-            if (section_name is None) and isinstance(section_content, Comment):
+            if section_name is None:
                 section_content = section_content.as_string()
-                section_name = CommentKey('comment', section_content)
-            self.create_setting(self.get_section('default', True),
+                section_name = '(' + 'comment' + str(self.__rand_helper) + ')'
+                self.__rand_helper += 1
+            self.create_setting(current_section,
                                 section_name,
                                 section_content,
                                 origin,
@@ -146,13 +133,14 @@ class TomlConfParser:
 
             # Handle full-line comments
             if content_key is None:
-                content_key = CommentKey('comment', content_value.as_string())
+                content_key = '(' + 'comment' + str(self.__rand_helper) + ')'
+                self.__rand_helper += 1
                 self.create_setting(current_section, content_key,
                                     content_value.as_string(),
                                     origin, False)
                 continue
             else:
-                content_key = decode(content_key.as_string())
+                content_key = content_key.as_string()
                 # Handle Aspects
                 if isinstance(content_value, Table):
                     self.generate_aspects(content_key, content_value,
@@ -178,6 +166,7 @@ class TomlConfParser:
     def __init_sections(self):
         self.sections = OrderedDict()
         self.sections['default'] = Section('Default')
+        self.__rand_helper = 0
 
     def create_setting(self, current_section, key, value, origin, to_append):
         current_section.add_or_create_setting(
@@ -209,11 +198,12 @@ class TomlConfParser:
         for k, v in content_value.value.body:
 
             if k is None:
-                com_key = CommentKey('comment', v.as_string())
+                com_key = '(' + 'comment' + str(self.__rand_helper) + ')'
+                self.__rand_helper += 1
                 self.create_setting(current_section, com_key, v.as_string(),
                                     origin, False)
             else:
-                k = decode(k.as_string())
+                k = k.as_string()
 
                 key = base_key + ':' + k
 
@@ -238,22 +228,17 @@ class TomlConfParser:
 
     def handle_inline_array_comments(self, current_section, content_key,
                                      content_value, origin):
-        inline_comment = (
-            content_value.trivia.comment_ws +
-            decode(content_value.trivia.comment) +
-            content_value.trivia.trail
-        )
+        inline_comment = content_value.trivia.comment
 
         if isinstance(content_value, tomlkit.items.Array):
             if self.check_array_comment(content_value):
-                c_key = CommentKey(content_key + '-array',
-                                   content_value.as_string())
+                c_key = '(' + content_key + '-array' + ')'
                 self.create_setting(current_section, c_key,
-                                    content_value, origin,
+                                    content_value.as_string(), origin,
                                     False)
 
         if '#' in inline_comment:
-            content_key = CommentKey(content_key + '-inline', inline_comment)
+            content_key = '(' + content_key + '-inline' + ')'
             self.create_setting(current_section, content_key,
                                 inline_comment, origin, False)
 

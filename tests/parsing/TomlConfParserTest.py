@@ -7,11 +7,11 @@ from collections import OrderedDict
 from coalib.parsing.ConfParser import ConfParser
 from coalib.parsing.TomlConfParser import TomlConfParser
 from coalib.settings.Section import Section
-from coalib.parsing.TomlConfParser import CommentKey
 
 
 class TomlConfParserTest(unittest.TestCase):
     example_file = """setting = 'without_section'
+comment0 = 'Hello'
 # hello
 [all]
 # Hello World
@@ -93,7 +93,9 @@ aspectname1.subaspect_taste1 =  'hello'
     def test_parse_default_section_deprecated(self):
         default_should = OrderedDict([
             ('setting', 'without_section'),
-            ('comment, # hello', '# hello')])
+            ('comment0', 'Hello'),
+            ('(comment0)', '# hello')
+        ])
 
         key, val = self.sections.popitem(last=False)
         self.assertTrue(isinstance(val, Section))
@@ -109,13 +111,13 @@ aspectname1.subaspect_taste1 =  'hello'
 
     def test_parse_all(self):
         all_should = OrderedDict([
-            ('comment, # hello world', '# Hello World'),
-            ('max_line_length-inline,  #cadc', '#cadc'),
+            ('(comment1)', '# Hello World'),
+            ('(max_line_length-inline)', '#cadc'),
             ('max_line_length', '80'),
             ('ignore', './vendor'),
-            ('a-inline,  #ccas', '#ccas'),
+            ('(a-inline)', '#ccas'),
             ('a', 'true'),
-            ('comment,', '')
+            ('(comment2)', '')
         ])
 
         # pop off default
@@ -131,22 +133,13 @@ aspectname1.subaspect_taste1 =  'hello'
             is_dict[k] = str(val[k])
         self.assertEqual(is_dict, all_should)
 
-    def test_comment_key(self):
-        a = CommentKey('a', 'b')
-        b = CommentKey('a', 'b')
-        c = CommentKey('a', 'c')
-        self.assertEqual(a, b)
-        self.assertNotEqual(a, c)
-        self.assertNotEqual(hash(a), hash(c))
-        self.assertEqual(hash(a), hash(b))
-
     def test_parse_empty_elem_strip_section(self):
         empty_elem_strip_should = OrderedDict([
             ('a', 'a, b, c'),
             ('b', 'a,   ,   , d'),
             ('c', ', , ,'),
-            ('comment,', '')
-            ])
+            ('(comment3)', '')
+        ])
 
         # Pop off default and all section.
         self.sections.popitem(last=False)
@@ -168,7 +161,7 @@ aspectname1.subaspect_taste1 =  'hello'
             ('aspectname1:aspect_taste', '80'),
             ('aspectname1:subaspect_taste', 'word1, word2, word3'),
             ('aspectname1:subaspect_taste1', 'word5'),
-            ('comment,', '')
+            ('(comment4)', '')
         ])
 
         self.sections.popitem(last=False)
@@ -192,7 +185,7 @@ aspectname1.subaspect_taste1 =  'hello'
             ('aspectname1:subaspect_taste:taste2', 'dog, cat'),
             ('aspectname1:subaspect_taste1', 'hello'),
             ('appends', 'aspectname1.subaspect_taste1'),
-            ('comment,', '')
+            ('(comment5)', '')
         ])
 
         self.sections.popitem(last=False)
