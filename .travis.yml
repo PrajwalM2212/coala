@@ -111,12 +111,11 @@ before_script:
   - python .misc/check_setuptools.py
 
 script:
-  - py.test
   - python setup.py bdist_wheel
   - pip install ./dist/coala-*.whl
   - curl -fsSL -o coala-bears.zip $BEARS_ZIP_URL/master
   - pip install coala-bears.zip[alldeps] --pre -U
-  - coala --non-interactive
+  - coala --use-toml --non-interactive
   - python setup.py docs
   - .ci/check_man.sh
 
