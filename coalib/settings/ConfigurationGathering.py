@@ -7,6 +7,7 @@ from coalib.collecting.Collectors import (
 from coalib.bearlib.languages.Language import Language, UnknownLanguageError
 from coalib.misc import Constants
 from coalib.output.ConfWriter import ConfWriter
+from coalib.output.TomlConfWriter import TomlConfWriter
 from coalib.output.printers.LOG_LEVEL import LOG_LEVEL
 from coalib.parsing.CliParsing import parse_cli, check_conflicts
 from coalib.parsing.ConfParser import ConfParser
@@ -609,6 +610,8 @@ def gather_configuration(acquire_settings,
         arg_list = sys.argv[1:] if arg_list is None else arg_list
     sections, targets = load_configuration(arg_list, arg_parser=arg_parser,
                                            args=args)
+
+    TomlConfWriter(sections).write()
     _set_section_language(sections)
     aspectize_sections(sections)
     local_bears, global_bears = fill_settings(sections,
