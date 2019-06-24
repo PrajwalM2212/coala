@@ -73,7 +73,6 @@ class TomlConfParser:
 
         for item in self.data:
             self.generate_section(item, input_data)
-
         return self.sections
 
     def get_section(self, name, create_if_not_exists=False):
@@ -134,17 +133,20 @@ class TomlConfParser:
                                 )
             return
 
-        # Get to be appended keys
+        # Get the keys to be appended
         if 'appends' in section_content.keys():
-            appends.append(section_content.get('appends'))
+            appends = section_content.get('appends')
 
         if 'inherits' in section_content.keys():
 
             for parent in section_content.get('inherits'):
+                s_appends = appends
                 s_name = parent + '.' + section_name.as_string()
                 current_section = self.get_section(s_name, True)
+                if isinstance(appends, Table):
+                    s_appends = appends.get(parent, [])
                 self.fill_table_settings(current_section, section_content,
-                                         origin, appends)
+                                         origin, s_appends)
         else:
 
             section_name = section_name.as_string()
@@ -168,11 +170,10 @@ class TomlConfParser:
                 continue
             else:
                 content_key = content_key.as_string()
-                # Handle Aspects
                 if isinstance(content_value, Table):
-                    self.generate_aspects(content_key, content_value,
-                                          current_section, appends,
-                                          origin)
+                    self.handle_nested_table(content_key, content_value,
+                                             current_section, appends,
+                                             origin)
                     continue
 
                 to_append = False
@@ -207,8 +208,8 @@ class TomlConfParser:
             # Stop ignoring
             allow_appending=(key == []))
 
-    def generate_aspects(self, content_key, content_value,
-                         current_section, appends, origin):
+    def handle_nested_table(self, content_key, content_value,
+                            current_section, appends, origin):
         """
         Generates aspects related settings
 
@@ -231,12 +232,6 @@ class TomlConfParser:
                 k = k.as_string()
 
                 key = base_key + ':' + k
-
-                # handle aspects
-                if isinstance(v, Table):
-                    self.generate_aspects(key, v, current_section, appends,
-                                          origin)
-                    continue
 
                 if not isinstance(v, str):
                     v = self.format_value(v)

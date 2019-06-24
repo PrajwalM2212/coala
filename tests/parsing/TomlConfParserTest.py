@@ -35,10 +35,8 @@ aspectname1.subaspect_taste1 = 'word5'
 [foo2]
 inherits = ['foo']
 aspects = 'aspectname3'
-aspectname1.subaspect_taste.taste = 100
-aspectname1.subaspect_taste.taste2 = ['dog', 'cat']
+aspectname1.subaspect_taste1 = ['dog', 'cat']
 appends = 'aspectname1.subaspect_taste1'
-aspectname1.subaspect_taste1 =  'hello'
 
 
 [sample]
@@ -50,6 +48,21 @@ aspectname1.subaspect_taste1 =  'hello'
         ]
 
     a = 10
+
+[a]
+p = '10'
+q = '20'
+
+[b]
+c = '5'
+d  = '6'
+
+[c]
+inherits = [ 'a', 'b' ]
+p  = 'a'
+d  = 'b'
+appends.a = 'p'
+appends.b = 'd'
 """
 
     def setUp(self):
@@ -180,12 +193,9 @@ aspectname1.subaspect_taste1 =  'hello'
         inherited_should = OrderedDict([
             ('inherits', 'foo'),
             ('aspects', 'aspectname3'),
-            ('aspectname1:subaspect_taste:taste', '100'),
-            ('aspectname1:subaspect_taste:taste2', 'dog, cat'),
-            ('aspectname1:subaspect_taste1', 'hello'),
+            ('aspectname1:subaspect_taste1', 'dog, cat'),
             ('appends', 'aspectname1.subaspect_taste1'),
-            ('(comment5)', '')
-        ])
+            ('(comment5)', '')])
 
         self.sections.popitem(last=False)
         self.sections.popitem(last=False)
@@ -195,7 +205,6 @@ aspectname1.subaspect_taste1 =  'hello'
 
         self.assertTrue(isinstance(val, Section))
         self.assertEqual(key, 'foo.foo2')
-
         is_dict = OrderedDict()
         for k in val:
             is_dict[k] = str(val[k])
@@ -222,6 +231,45 @@ aspectname1.subaspect_taste1 =  'hello'
                          ['a', 'd'])
         self.assertEqual(list(uut.get_section('EMPTY_ELEM_STRIP')['C']),
                          [])
+
+    def test_nested_inheritance(self):
+        self.sections.popitem(last=False)
+        self.sections.popitem(last=False)
+        self.sections.popitem(last=False)
+        self.sections.popitem(last=False)
+        self.sections.popitem(last=False)
+        self.sections.popitem(last=False)
+        self.sections.popitem(last=False)
+        self.sections.popitem(last=False)
+
+        inherit_should = OrderedDict([
+            ('inherits', 'a, b'),
+            ('p', 'a'),
+            ('d', 'b'),
+            ('appends:a', 'p'),
+            ('appends:b', 'd')])
+
+        # Test a.c
+        key, val = self.sections.popitem(last=False)
+        self.assertTrue(isinstance(val, Section))
+        self.assertEqual(key, 'a.c')
+        is_dict = OrderedDict()
+        for k in val:
+            is_dict[k] = str(val[k])
+        self.assertTrue(val.contents.get('p').to_append)
+        self.assertFalse(val.contents.get('d').to_append)
+        self.assertEqual(is_dict, inherit_should)
+
+        # Test b.c
+        key, val = self.sections.popitem(last=False)
+        self.assertTrue(isinstance(val, Section))
+        self.assertEqual(key, 'b.c')
+        is_dict = OrderedDict()
+        for k in val:
+            is_dict[k] = str(val[k])
+        self.assertTrue(val.contents.get('d').to_append)
+        self.assertFalse(val.contents.get('p').to_append)
+        self.assertEqual(is_dict, inherit_should)
 
     def test_config_directory(self):
         self.uut.parse(self.tempdir)
