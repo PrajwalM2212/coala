@@ -1,4 +1,5 @@
 from coalib.parsing.TomlConfParser import TomlSetting
+from coalib.settings.Section import Section
 from tomlkit import document, table, dumps, array, string, key, integer, comment
 from tomlkit.items import Array, String, Bool, Integer, Comment, Key, KeyType
 
@@ -11,17 +12,13 @@ class TomlConfWriter:
     def write(self):
         for item in self.sections:
             section = self.sections[item]
-            table_name = section.name
+            table_name = self.get_table_name(section)
+            if table_name in self.document:
+                continue
             table_contents = table()
             for _, setting in section.contents.items():
 
-                if ':' in setting.key:
-                    count = setting.key.count(':')
-                    setting_key = Key(setting.key.replace(':', '.', count),
-                                      t=KeyType.Bare,
-                                      dotted=True)
-                else:
-                    setting_key = key(setting.key)
+                setting_key = self.get_setting_key(setting)
 
                 if isinstance(setting, TomlSetting):
                     value = setting.original_value
@@ -57,3 +54,33 @@ class TomlConfWriter:
             except ValueError:
                 pass
         return value
+
+    def get_setting_key(self, setting):
+        if ':' in setting.key:
+            count = setting.key.count(':')
+            setting_key = Key(setting.key.replace(':', '.', count),
+                              t=KeyType.Bare,
+                              dotted=True)
+        else:
+            setting_key = key(setting.key)
+        return setting_key
+
+    def get_table_name(self, section: Section):
+        name: str = section.name
+        if name.startswith('"') or name.startswith("'"):
+            return name
+        elif '.' in name:
+            if 'inherits' in section.contents:
+                inherits = section.contents.get('inherits').original_value
+                parent_pos = -1
+                if isinstance(inherits, Array):
+                    i = 0
+                    while parent_pos == -1:
+                        parent = inherits[i]
+                        parent_pos = name.find(parent)
+                        i += 1
+                else:
+                    parent = inherits
+                    parent_pos = name.find(parent)
+                name = name[parent_pos + len(parent) + 1:]
+        return name
