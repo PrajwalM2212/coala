@@ -1,3 +1,6 @@
+import re
+
+from coalib.misc import Constants
 from coalib.parsing.TomlConfParser import TomlSetting
 from coalib.settings.Section import Section
 from tomlkit import document, table, dumps, array, string, key, integer, comment
@@ -38,21 +41,30 @@ class TomlConfWriter:
                     table_contents[setting_key].comment(value.trivia.comment)
                 elif isinstance(value, Comment):
                     table_contents.add(comment(value.as_string()))
-                elif isinstance(value, (str, bool, int)):
+                elif isinstance(value, (str, bool, int, list)):
                     table_contents.add(setting_key, value)
 
             self.document.add(table_name, table_contents)
 
+        with open('.coafile', 'w') as file:
+            file.write(dumps(self.document))
         print(dumps(self.document))
 
     def get_value_type(self, value):
-        try:
-            value = int(value)
-        except ValueError:
-            try:
-                value = bool(value)
-            except ValueError:
-                pass
+
+        if ',' in value:
+            value_list = []
+            mod = ''.join(re.split(r'\n', value))
+            for v in re.split(r',', mod):
+                value_list.append(v.strip())
+            return value_list
+
+        if (value.lower() == 'true') or (value.lower() == 'false'):
+            return bool(value)
+
+        if value.isdigit():
+            return int(value)
+
         return value
 
     def get_setting_key(self, setting):
