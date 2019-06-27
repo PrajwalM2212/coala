@@ -1,10 +1,9 @@
-import re
 
-from coalib.misc import Constants
+from coala_utils.string_processing import unescape
 from coalib.parsing.TomlConfParser import TomlSetting
 from coalib.settings.Section import Section
 from tomlkit import document, table, dumps, array, string, key, integer, comment
-from tomlkit.items import Array, String, Bool, Integer, Comment, Key, KeyType
+from tomlkit.items import Array, String, Bool, Integer, Comment, Key, KeyType, Trivia
 
 
 class TomlConfWriter:
@@ -26,38 +25,39 @@ class TomlConfWriter:
                 if isinstance(setting, TomlSetting):
                     value = setting.original_value
                 else:
-                    value = self.get_value_type(setting.value)
+                    value = self.get_original_value(setting.value)
 
                 if isinstance(value, Array):
                     table_contents.add(setting_key, array(value.as_string()))
-                    table_contents[setting_key].comment(value.trivia.comment)
+                    if value.trivia.comment:
+                        table_contents[setting_key].comment(value.trivia.comment)
                 elif isinstance(value, String):
                     table_contents.add(setting_key, string(value))
-                    table_contents[setting_key].comment(value.trivia.comment)
+                    if value.trivia.comment:
+                        table_contents[setting_key].comment(value.trivia.comment)
                 elif isinstance(value, Bool):
                     table_contents.add(setting_key, value)
                 elif isinstance(value, Integer):
                     table_contents.add(setting_key, integer(value.as_string()))
-                    table_contents[setting_key].comment(value.trivia.comment)
+                    if value.trivia.comment:
+                        table_contents[setting_key].comment(value.trivia.comment)
                 elif isinstance(value, Comment):
-                    table_contents.add(comment(value.as_string()))
+                    table_contents.add(Comment(
+                        Trivia(comment_ws="  ", comment=str(value))
+                    ))
                 elif isinstance(value, (str, bool, int, list)):
                     table_contents.add(setting_key, value)
 
             self.document.add(table_name, table_contents)
 
-        with open('.coafile', 'w') as file:
-            file.write(dumps(self.document))
         print(dumps(self.document))
 
-    def get_value_type(self, value):
+    @staticmethod
+    def get_original_value(value):
 
         if ',' in value:
-            value_list = []
-            mod = ''.join(re.split(r'\n', value))
-            for v in re.split(r',', mod):
-                value_list.append(v.strip())
-            return value_list
+            v = [unescape(v) for v in value.split(',')]
+            return [unescape(v, '\n').strip() for v in v]
 
         if (value.lower() == 'true') or (value.lower() == 'false'):
             return bool(value)
@@ -65,9 +65,10 @@ class TomlConfWriter:
         if value.isdigit():
             return int(value)
 
-        return value
+        return unescape(value)
 
-    def get_setting_key(self, setting):
+    @staticmethod
+    def get_setting_key(setting):
         if ':' in setting.key:
             count = setting.key.count(':')
             setting_key = Key(setting.key.replace(':', '.', count),
@@ -77,7 +78,8 @@ class TomlConfWriter:
             setting_key = key(setting.key)
         return setting_key
 
-    def get_table_name(self, section: Section):
+    @staticmethod
+    def get_table_name(section: Section):
         name: str = section.name
         if name.startswith('"') or name.startswith("'"):
             return name
