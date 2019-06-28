@@ -58,6 +58,11 @@ class TomlConfWriter:
         for item in self.sections:
             section = self.sections[item]
             table_name, inherits = self.get_section_name(section.name)
+
+            if table_name in self.document:
+                self.document[table_name]['inherits'].append(inherits)
+                continue
+
             appends = []
             table_contents = table()
             for k, setting in section.contents.items():
@@ -74,7 +79,7 @@ class TomlConfWriter:
                 table_contents.add(setting_key, value)
 
             if not inherits == []:
-                table_contents.add(key('inherits'), inherits)
+                table_contents.add(key('inherits'), [inherits])
 
             if not appends == []:
                 table_contents.add(key('appends'), appends)
