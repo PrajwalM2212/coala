@@ -1,3 +1,4 @@
+import re
 
 from coala_utils.string_processing import unescape
 from coalib.parsing.TomlConfParser import TomlSetting
@@ -52,6 +53,45 @@ class TomlConfWriter:
 
         print(dumps(self.document))
 
+    def coafile_to_toml(self):
+        comment_regex = re.compile(r'comment[\d]+')
+        for item in self.sections:
+            section = self.sections[item]
+            table_name, inherits = self.get_section_name(section.name)
+            appends = []
+            table_contents = table()
+            for k, setting in section.contents.items():
+                setting_key = self.get_setting_key(setting)
+
+                if comment_regex.search(setting_key.as_string()):
+                    continue
+
+                if setting.to_append:
+                    appends.append(k)
+                    value = section[k].value
+                else:
+                    value = self.get_original_value(setting.value)
+                table_contents.add(setting_key, value)
+
+            if not inherits == []:
+                table_contents.add(key('inherits'), inherits)
+
+            if not appends == []:
+                table_contents.add(key('appends'), appends)
+
+            self.document.add(table_name, table_contents)
+        print(dumps(self.document))
+
+    @staticmethod
+    def get_section_name(section_name):
+        dot_pos = section_name.rfind('.')
+
+        inherits = []
+        if dot_pos != -1:
+            inherits = section_name[:dot_pos]
+
+        return section_name[dot_pos + 1:], inherits
+
     @staticmethod
     def get_original_value(value):
 
@@ -98,3 +138,7 @@ class TomlConfWriter:
                     parent_pos = name.find(parent)
                 name = name[parent_pos + len(parent) + 1:]
         return name
+
+
+if __name__ == '__main__':
+    print(TomlConfWriter.get_section_name('all.python.java'))
