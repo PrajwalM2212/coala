@@ -60,20 +60,25 @@ class TomlConfWriter:
             table_name, inherits = self.get_section_name(section.name)
 
             if table_name in self.document:
-                self.document[table_name]['inherits'].append(inherits)
+                existing_table = self.document[table_name]
+                existing_table.get('inherits', []).append(inherits)
+                existing_table.add(Key('appends.{}'.format(inherits),
+                                       t=KeyType.Bare,
+                                       dotted=True),
+                                   self.get_appended_keys(section))
                 continue
 
             appends = []
             table_contents = table()
-            for k, setting in section.contents.items():
+            for _, setting in section.contents.items():
                 setting_key = self.get_setting_key(setting)
 
                 if comment_regex.search(setting_key.as_string()):
                     continue
 
                 if setting.to_append:
-                    appends.append(k)
-                    value = section[k].value
+                    appends.append(setting.key)
+                    value = setting._value
                 else:
                     value = self.get_original_value(setting.value)
                 table_contents.add(setting_key, value)
@@ -82,10 +87,30 @@ class TomlConfWriter:
                 table_contents.add(key('inherits'), [inherits])
 
             if not appends == []:
-                table_contents.add(key('appends'), appends)
+                if inherits:
+                    table_contents.add(Key('appends.{}'.format(inherits),
+                                           t=KeyType.Bare,
+                                           dotted=True), appends)
+                else:
+                    table_contents.add(key('appends'), appends)
 
             self.document.add(table_name, table_contents)
         print(dumps(self.document))
+
+    def toml_to_coafile(self):
+        print(self.sections)
+        pass
+
+    @staticmethod
+    def get_appended_keys(section):
+
+        appends = []
+        for _, setting in section.contents.items():
+
+            if setting.to_append:
+                appends.append(setting.key)
+
+        return appends
 
     @staticmethod
     def get_section_name(section_name):
