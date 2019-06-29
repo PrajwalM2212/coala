@@ -3,6 +3,7 @@ import re
 from coala_utils.string_processing import unescape
 from coalib.parsing.TomlConfParser import TomlSetting
 from coalib.settings.Section import Section
+
 from tomlkit import document, table, dumps, array, string, key, integer, comment
 from tomlkit.items import Array, String, Bool, Integer, Comment, Key, KeyType, Trivia
 
@@ -44,7 +45,7 @@ class TomlConfWriter:
                         table_contents[setting_key].comment(value.trivia.comment)
                 elif isinstance(value, Comment):
                     table_contents.add(Comment(
-                        Trivia(comment_ws="  ", comment=str(value))
+                        Trivia(comment_ws='  ', comment=str(value))
                     ))
                 elif isinstance(value, (str, bool, int, list)):
                     table_contents.add(setting_key, value)
@@ -98,8 +99,21 @@ class TomlConfWriter:
         print(dumps(self.document))
 
     def toml_to_coafile(self):
-        print(self.sections)
-        pass
+        appends_regex = re.compile(r'appends(:[\w]+)*')
+        comment_regex = re.compile(r'comment[\d]+')
+        for item in self.sections:
+            to_delete = []
+            section = self.sections[item]
+            for _, setting in section.contents.items():
+                if setting.key == 'inherits':
+                    to_delete.append(setting.key)
+                if appends_regex.search(setting.key):
+                    to_delete.append(setting.key)
+                if comment_regex.search(setting.key):
+                    to_delete.append(setting.key)
+
+            for setting_key in to_delete:
+                section.delete_setting(setting_key)
 
     @staticmethod
     def get_appended_keys(section):
