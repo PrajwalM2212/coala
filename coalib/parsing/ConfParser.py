@@ -99,10 +99,22 @@ class ConfParser:
              value,
              append,
              comment) = self.line_parser._parse(line)
+            print((section_name,
+                   keys,
+                   value,
+                   append,
+                   comment))
 
             line_number += 1
-            if comment != '':
+            if comment != '' and keys == []:
                 self.__add_comment(current_section, comment, origin)
+
+            if keys != [] and comment != '':
+                current_section.append(Setting('comment-{}-inline'.format(keys[0][1]),
+                                               comment,
+                                               origin,
+                                               remove_empty_iter_elements=self.__remove_empty_iter_elements)
+                                       )
 
             if section_name != '':
                 no_section = False
@@ -145,23 +157,23 @@ class ConfParser:
                                 # they fail to resolve this
                                 remove_empty_iter_elements=
                                 self.__remove_empty_iter_elements),
-                                # Stop ignoring
+                        # Stop ignoring
                         allow_appending=(keys == []))
                 else:
                     self.get_section(
                         section_override,
                         True).add_or_create_setting(
-                            Setting(key,
-                                    value,
-                                    SourcePosition(
-                                        str(origin), line=line_number),
-                                    to_append=append,
-                                    # Start ignoring PEP8Bear, PycodestyleBear*
-                                    # they fail to resolve this
-                                    remove_empty_iter_elements=
-                                    self.__remove_empty_iter_elements),
-                                    # Stop ignoring
-                            allow_appending=(keys == []))
+                        Setting(key,
+                                value,
+                                SourcePosition(
+                                    str(origin), line=line_number),
+                                to_append=append,
+                                # Start ignoring PEP8Bear, PycodestyleBear*
+                                # they fail to resolve this
+                                remove_empty_iter_elements=
+                                self.__remove_empty_iter_elements),
+                        # Stop ignoring
+                        allow_appending=(keys == []))
 
     def __init_sections(self):
         self.sections = OrderedDict()
