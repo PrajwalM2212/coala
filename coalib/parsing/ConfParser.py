@@ -99,15 +99,24 @@ class ConfParser:
              value,
              append,
              comment) = self.line_parser._parse(line)
-            print((section_name,
-                   keys,
-                   value,
-                   append,
-                   comment))
+
+            print(section_name,
+                  keys,
+                  value,
+                  append,
+                  comment)
 
             line_number += 1
             if comment != '' and keys == []:
                 self.__add_comment(current_section, comment, origin)
+
+            if value.strip().endswith(',') and comment != '':
+                current_section.append(Setting('comment-{}-array'.format(value),
+                                               comment,
+                                               origin,
+                                               remove_empty_iter_elements=self.__remove_empty_iter_elements
+                                               ))
+                print(current_section)
 
             if keys != [] and comment != '':
                 current_section.append(Setting('comment-{}-inline'.format(keys[0][1]),

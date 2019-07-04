@@ -42,6 +42,8 @@ class ConfWriter(ClosableObject):
          self.__section_name_surrounding_end) = (
             tuple(self.__section_name_surroundings.items())[0])
 
+        self.next_inline_comment = ''
+
     def _close(self):
         self.__file.close()
 
@@ -65,6 +67,7 @@ class ConfWriter(ClosableObject):
         try:
             while True:
                 setting = section[next(section_iter)]
+                # print keys with no vals
                 if (str(setting) == val and
                     not self.is_comment(setting.key) and
                     (
@@ -73,6 +76,7 @@ class ConfWriter(ClosableObject):
                     keys.append(setting.key)
                 elif ((setting.key not in self.__unsavable_keys) or
                       (not setting.from_cli)):
+                    # print(keys, val)
                     self.__write_key_val(keys, val, section.defaults)
                     keys = [setting.key]
                     val = str(setting)
@@ -87,8 +91,12 @@ class ConfWriter(ClosableObject):
 
     def __write_key_val(self, keys, val, defaults):
         assert not self.__closed
-
+        # print(keys, val)
         if keys == []:
+            return
+
+        if all(self.is_inline_comment(key) for key in keys):
+            self.next_inline_comment = ' ' + val
             return
 
         if all(self.is_comment(key) for key in keys):
@@ -103,16 +111,17 @@ class ConfWriter(ClosableObject):
                                   self.__section_override_delimiters))
                 for key in keys]
         val = escape(val, chain(['\\'], self.__comment_separators))
-
         append_keys = []
         other_keys = []
         for key in keys:
             if (defaults and
-                    (key in defaults and
-                     val.startswith(str(defaults[key])+','))):
+                (key in defaults and
+                 val.startswith(str(defaults[key]) + ','))):
                 append_keys.append(key)
             else:
                 other_keys.append(key)
+
+        print(keys, val)
         self.__write_keys_val_to_file(append_keys, other_keys, val, defaults)
 
     def __write_keys_val_to_file(self, append_keys, other_keys, val, defaults):
@@ -149,13 +158,14 @@ class ConfWriter(ClosableObject):
                     def_val = str(defaults[key])
             append_val = self.__get_append_val(val, def_val)
             self.__write_value(write_keys,
-                               append_val,
+                               append_val + self.next_inline_comment,
                                self.__key_value_append_delimiter)
 
         if other_keys:
             self.__write_value(other_keys,
-                               val,
+                               val + self.next_inline_comment,
                                self.__key_value_delimiter)
+        self.next_inline_comment = ''
 
     def __get_append_val(self, val, def_val):
         def_val_list = def_val.split(self.__key_delimiter)
@@ -172,4 +182,18 @@ class ConfWriter(ClosableObject):
 
     @staticmethod
     def is_comment(key):
-        return key.lower().startswith('comment')
+        import re
+        pattern = re.compile(r'comment(\d)+')
+        return re.search(pattern, key)
+
+    @staticmethod
+    def is_inline_comment(key):
+        import re
+        pattern = re.compile(r'comment-[\w]+-inline')
+        return re.search(pattern, key)
+
+    @staticmethod
+    def is_array_comment(key):
+        import re
+        pattern = re.compile(r'comment-([\w\,]+)-array')
+        return re.search(pattern, key)
