@@ -15,6 +15,7 @@ from coalib.settings.Section import Section, extract_aspects_from_section
 from coalib.settings.SectionFilling import fill_settings
 from coalib.settings.Setting import Setting, path
 from string import Template
+from coala_styles.coala_styles import get_style
 
 COAFILE_OUTPUT = Template('$type \'$file\' $found!\n'
                           'Here\'s what you can do:\n'
@@ -448,6 +449,13 @@ def get_filtered_bears(languages,
     return local_bears, global_bears
 
 
+def get_style_config(args):
+    if args and args.init:
+        lang, author = args.init
+
+        args.config = get_style(lang, author)
+
+
 def gather_configuration(acquire_settings,
                          log_printer=None,
                          arg_list=None,
@@ -495,6 +503,9 @@ def gather_configuration(acquire_settings,
         # Note: arg_list can also be []. Hence we cannot use
         # `arg_list = arg_list or default_list`
         arg_list = sys.argv[1:] if arg_list is None else arg_list
+
+    get_style_config(args)
+
     sections, targets = load_configuration(arg_list, arg_parser=arg_parser,
                                            args=args)
     _set_section_language(sections)

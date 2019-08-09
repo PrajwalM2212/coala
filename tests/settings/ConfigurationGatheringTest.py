@@ -3,6 +3,7 @@ import tempfile
 import unittest
 import logging
 import sys
+from argparse import Namespace
 
 from pyprint.ClosableObject import close_objects
 from pyprint.NullPrinter import NullPrinter
@@ -97,6 +98,21 @@ class ConfigurationGatheringTest(unittest.TestCase):
                                                '-b LineCountBear -s']))
 
         self.assertEqual(len(local_bears['cli']), 0)
+
+    def test_get_style_config(self):
+        args = Namespace()
+        args.init = ['python', 'pep8']
+        args.files = 'a.py'
+        sections, local_bears, global_bears, targets = (
+            gather_configuration(
+                (lambda *args: True, self.log_printer),
+                args=args,
+                arg_list=[]))
+
+        self.assertEqual(str(sections['pep8']),
+                         "pep8 {bears : 'PEP8Bear, PycodestyleBear',"
+                         " language : 'Python'}"
+                         )
 
     @log_capture()
     def test_default_coafile_deprecation(self, capture):
