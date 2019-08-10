@@ -114,6 +114,14 @@ class ConfigurationGatheringTest(unittest.TestCase):
                          " language : 'Python'}"
                          )
 
+        with self.assertRaises(SystemExit):
+            args.init = ['ruby', 'pep8']
+            args.files = 'a.py'
+            gather_configuration(
+                    (lambda *args: True, self.log_printer),
+                    args=args,
+                    arg_list=[])
+
     @log_capture()
     def test_default_coafile_deprecation(self, capture):
         system_coafile_path = os.path.abspath(os.path.join(

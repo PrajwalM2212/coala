@@ -455,6 +455,13 @@ def get_style_config(args):
 
         args.config = get_style(lang, author)
 
+        if not os.path.exists(args.config):
+            logging.error('{} style guide for {} '
+                          'does not exist currently \n'
+                          .format(author, lang))
+            import errno
+            sys.exit(errno.ENOENT)
+
 
 def gather_configuration(acquire_settings,
                          log_printer=None,
